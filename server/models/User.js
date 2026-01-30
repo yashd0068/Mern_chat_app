@@ -55,16 +55,30 @@ const userSchema = new mongoose.Schema({
 });
 
 // ✅ CORRECT: Async function WITHOUT next parameter
-userSchema.pre('save', async function () {
+// userSchema.pre('save', async function () {
+//     // Only hash the password if it has been modified
+//     if (!this.isModified('password')) return;
+
+//     try {
+//         const salt = await bcrypt.genSalt(10);
+//         this.password = await bcrypt.hash(this.password, salt);
+//     } catch (error) {
+//         console.error('Error hashing password:', error);
+//         throw error;
+//     }
+// });
+
+// FIX your User model:
+userSchema.pre('save', async function (next) {  // Add 'next' parameter
     // Only hash the password if it has been modified
-    if (!this.isModified('password')) return;
+    if (!this.isModified('password')) return next();  // Call next()
 
     try {
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
+        next();  // Call next() when done
     } catch (error) {
-        console.error('Error hashing password:', error);
-        throw error;
+        next(error);  // Pass error to next
     }
 });
 

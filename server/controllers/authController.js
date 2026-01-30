@@ -7,48 +7,74 @@ const generateToken = (id) => {
     });
 };
 
-// Register user
-const register = async (name, email, password) => {
+// Register user - SERVER SIDE
+const register = async (req, res) => {
     try {
-        setError(null);
+        const { name, email, password } = req.body;
 
-        // ADD DEBUG LOGS
-        console.log('🔍 API_URL:', API_URL);
-        console.log('🔍 Full URL:', `${API_URL}/auth/register`);
-        console.log('🔍 Request data:', { name, email, password });
+        console.log('🔍 Registration attempt:', { name, email });
 
-        const { data } = await axios.post(`${API_URL}/auth/register`, {
+        // Check if all fields are provided
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide all fields'
+            });
+        }
+
+        // Check if user exists
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            console.log('❌ User already exists:', email);
+            return res.status(400).json({
+                success: false,
+                message: 'User already exists'
+            });
+        }
+
+        // Create user
+        console.log('📝 Creating user...');
+        const user = await User.create({
             name,
             email,
             password
-        }, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
         });
 
-        console.log('✅ Registration response:', data);
-        localStorage.setItem('userInfo', JSON.stringify(data));
-        setUser(data);
-        return { success: true, data };
-    } catch (err) {
-        console.error('❌ Registration error:', {
-            message: err.message,
-            url: err.config?.url,
-            status: err.response?.status,
-            data: err.response?.data,
-            headers: err.response?.headers
+        console.log('✅ User created:', user._id);
+
+        // Generate token
+        const token = generateToken(user._id);
+
+        res.status(201).json({
+            success: true,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                profilePic: user.profilePic,
+                bio: user.bio,
+                followers: user.followers,
+                following: user.following,
+                online: user.online,
+                lastSeen: user.lastSeen
+            },
+            token: token
         });
-        const message = err.response?.data?.message || 'Registration failed';
-        setError(message);
-        return { success: false, message };
+    } catch (error) {
+        console.error('🔥 Registration error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Registration failed'
+        });
     }
 };
 
-// Login user
+// Login user - UPDATED WITH DEBUG LOGS
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        console.log('🔑 Login attempt:', { email });
 
         // Check if email and password are provided
         if (!email || !password) {
@@ -60,17 +86,23 @@ const login = async (req, res) => {
 
         // Find user by email
         const user = await User.findOne({ email });
+        console.log('🔍 User found:', user ? `Yes (${user._id})` : 'No');
 
-        // Check if user exists and password matches
         if (!user) {
+            console.log('❌ User not found for email:', email);
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
             });
         }
 
+        // Check password
+        console.log('🔐 Comparing password...');
         const isPasswordMatch = await user.comparePassword(password);
+        console.log('🔐 Password match:', isPasswordMatch);
+
         if (!isPasswordMatch) {
+            console.log('❌ Password mismatch for user:', user.email);
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
@@ -81,6 +113,7 @@ const login = async (req, res) => {
         user.online = true;
         user.lastSeen = Date.now();
         await user.save();
+        console.log('✅ Login successful for:', user.email);
 
         // Generate token
         const token = generateToken(user._id);
@@ -101,10 +134,10 @@ const login = async (req, res) => {
             token: token
         });
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('🔥 Login error:', error);
         res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message || 'Login failed'
         });
     }
 };

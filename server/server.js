@@ -99,6 +99,28 @@ app.post('/api/auth/register', (req, res) => {
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Add this before your routes
+app.get('/api/debug/users', async (req, res) => {
+    try {
+        const users = await User.find({}).select('-password');
+        res.json({
+            count: users.length,
+            users: users.map(u => ({
+                _id: u._id,
+                name: u.name,
+                email: u.email,
+                createdAt: u.createdAt,
+                updatedAt: u.updatedAt
+            }))
+        });
+    } catch (error) {
+        res.json({
+            error: error.message,
+            message: 'Make sure User model is imported correctly'
+        });
+    }
+});
+
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
