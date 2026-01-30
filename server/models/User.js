@@ -130,12 +130,21 @@ const userSchema = new mongoose.Schema({
     lastSeen: {
         type: Date,
         default: Date.now
-    }
+    },
+    // ADD THESE FIELDS:
+    followers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: []
+    }],
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: []
+    }]
 }, {
     timestamps: true
 });
-
-// ✅ NO PRE-SAVE HOOK AT ALL - Remove it completely!
 
 // Compare password method (temporary - will fix later)
 userSchema.methods.comparePassword = async function (candidatePassword) {

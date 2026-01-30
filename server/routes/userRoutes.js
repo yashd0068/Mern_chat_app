@@ -4,7 +4,7 @@ const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 const path = require('path');
 const fs = require('fs');
-const { upload } = require('../middleware/uploadMiddleware'); // REMOVE handleMulterError from here
+const { upload } = require('../middleware/uploadMiddleware');
 
 // Update profile with image upload
 router.put('/profile',
@@ -48,8 +48,8 @@ router.put('/profile',
                     email: user.email,
                     profilePic: user.profilePic,
                     bio: user.bio,
-                    followers: user.followers,
-                    following: user.following,
+                    followers: user.followers || [],
+                    following: user.following || [],
                     online: user.online,
                     lastSeen: user.lastSeen
                 }
@@ -63,9 +63,6 @@ router.put('/profile',
         }
     }
 );
-
-// REMOVE THIS LINE COMPLETELY - IT'S CAUSING THE ERROR
-// router.use('/profile', handleMulterError);
 
 // Search users
 router.get('/search', protect, async (req, res) => {
@@ -167,6 +164,10 @@ router.put('/follow/:userId', protect, async (req, res) => {
                 message: 'Cannot follow yourself'
             });
         }
+
+        // Initialize arrays if they don't exist
+        if (!currentUser.following) currentUser.following = [];
+        if (!userToFollow.followers) userToFollow.followers = [];
 
         const isFollowing = currentUser.following.includes(userToFollow._id);
 
