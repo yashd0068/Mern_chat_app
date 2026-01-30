@@ -16,43 +16,37 @@ const register = async (req, res) => {
 
         // Check if all fields are provided
         if (!name || !email || !password) {
-            console.log('❌ Missing fields');
             return res.status(400).json({
                 success: false,
                 message: 'Please provide all fields'
             });
         }
 
-        // Check if user exists - CASE INSENSITIVE
+        // Check if user exists
         const userExists = await User.findOne({
-            email: { $regex: new RegExp(`^${email}$`, 'i') }
+            email: email.toLowerCase()
         });
 
         if (userExists) {
-            console.log('❌ User already exists:', userExists.email);
             return res.status(400).json({
                 success: false,
                 message: 'User already exists'
             });
         }
 
-        console.log('📝 Creating user document...');
+        console.log('📝 Creating user...');
 
-        // Create user - METHOD 1: Using User.create()
-        const user = await User.create({
+        // Create user - SIMPLE VERSION
+        const user = new User({
             name,
-            email: email.toLowerCase(), // Store lowercase
+            email: email.toLowerCase(),
             password
         });
 
-        console.log('✅ User created with ID:', user._id);
-        console.log('✅ User email:', user.email);
-        console.log('✅ Hashed password exists:', !!user.password);
-        console.log('✅ Password length:', user.password?.length);
+        // Save the user
+        await user.save();
 
-        // Verify user was saved
-        const savedUser = await User.findById(user._id);
-        console.log('✅ User verified in DB:', !!savedUser);
+        console.log('✅ User saved with ID:', user._id);
 
         // Generate token
         const token = generateToken(user._id);
@@ -71,14 +65,35 @@ const register = async (req, res) => {
             token: token
         });
     } catch (error) {
-        console.error('🔥 Registration error:', error.message);
+        console.error('🔥 Registration error:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
+
+        // Check if it's a validation error
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({
+                success: false,
+                message: messages.join(', ')
+            });
+        }
+
+        // Check if it's a duplicate key error
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email already exists'
+            });
+        }
+
         res.status(500).json({
             success: false,
-            message: error.message || 'Registration failed'
+            message: 'Registration failed: ' + error.message
         });
     }
 };
+
 // Login user - UPDATED WITH DEBUG LOGS
 const login = async (req, res) => {
     try {
