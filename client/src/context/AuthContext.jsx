@@ -26,7 +26,7 @@ console.log('Final API_URL:', API_URL);
 console.log('Login URL will be:', `${API_URL}/auth/login`);
 console.log('================');
 
-const AuthContext = createContext();
+
 
 
 const AuthContext = createContext();
