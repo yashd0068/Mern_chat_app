@@ -28,32 +28,26 @@ const allowedOrigins = [
 ];
 
 // Middleware
-app.use(
-    cors({
-        origin: function (origin, callback) {
-            if (!origin) return callback(null, true);
-            if (allowedOrigins.includes(origin)) {
-                callback(null, true);
-            } else {
-                console.log('CORS blocked origin:', origin);
-                callback(new Error("Not allowed by CORS"));
-            }
-        },
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization']
-    })
-);
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.log('CORS blocked origin:', origin);
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
-    console.log(`📨 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-    console.log('Origin:', req.headers.origin);
-    if (req.body && Object.keys(req.body).length > 0) {
-        console.log('Body:', req.body);
-    }
+    console.log(`📨 ${req.method} ${req.originalUrl}`);
     next();
 });
 
@@ -121,8 +115,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);
 
-// Catch-all for 404
-app.use('*', (req, res) => {
+// ✅ CORRECT: 404 handler - Simple middleware without '*'
+app.use((req, res, next) => {
     res.status(404).json({
         success: false,
         message: `Route ${req.originalUrl} not found`
@@ -146,7 +140,7 @@ mongoose.connect(process.env.MONGODB_URI)
     })
     .catch((err) => {
         console.error("❌ MongoDB error:", err);
-        process.exit(1); // Exit if DB connection fails
+        process.exit(1);
     });
 
 // Start server
