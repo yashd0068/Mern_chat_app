@@ -8,58 +8,40 @@ const generateToken = (id) => {
 };
 
 // Register user
-const register = async (req, res) => {
+const register = async (name, email, password) => {
     try {
-        const { name, email, password } = req.body;
+        setError(null);
 
-        // Check if all fields are provided
-        if (!name || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Please provide all fields'
-            });
-        }
+        // ADD DEBUG LOGS
+        console.log('🔍 API_URL:', API_URL);
+        console.log('🔍 Full URL:', `${API_URL}/auth/register`);
+        console.log('🔍 Request data:', { name, email, password });
 
-        // Check if user exists
-        const userExists = await User.findOne({ email });
-        if (userExists) {
-            return res.status(400).json({
-                success: false,
-                message: 'User already exists'
-            });
-        }
-
-        // Create user
-        const user = await User.create({
+        const { data } = await axios.post(`${API_URL}/auth/register`, {
             name,
             email,
             password
+        }, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
 
-        // Generate token
-        const token = generateToken(user._id);
-
-        res.status(201).json({
-            success: true,
-            user: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                profilePic: user.profilePic,
-                bio: user.bio,
-                followers: user.followers,
-                following: user.following,
-                online: user.online,
-                lastSeen: user.lastSeen
-            },
-            token: token
+        console.log('✅ Registration response:', data);
+        localStorage.setItem('userInfo', JSON.stringify(data));
+        setUser(data);
+        return { success: true, data };
+    } catch (err) {
+        console.error('❌ Registration error:', {
+            message: err.message,
+            url: err.config?.url,
+            status: err.response?.status,
+            data: err.response?.data,
+            headers: err.response?.headers
         });
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        const message = err.response?.data?.message || 'Registration failed';
+        setError(message);
+        return { success: false, message };
     }
 };
 

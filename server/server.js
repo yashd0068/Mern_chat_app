@@ -51,6 +51,51 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Add this after CORS middleware
+app.use((req, res, next) => {
+    console.log(`📨 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    console.log('Origin:', req.headers.origin);
+    console.log('Headers:', req.headers);
+    if (req.body) {
+        console.log('Body:', req.body);
+    }
+    next();
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({
+        status: 'OK',
+        message: 'Server is running!',
+        endpoints: {
+            register: 'POST /api/auth/register',
+            test: 'GET /api/test'
+        }
+    });
+});
+
+// Test endpoint
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'API test endpoint is working!' });
+});
+
+// Temporary simple register endpoint
+app.post('/api/auth/register', (req, res) => {
+    console.log('📝 Register endpoint called with:', req.body);
+
+    // Simple response
+    res.json({
+        success: true,
+        message: 'Registration successful!',
+        user: {
+            _id: 'user_' + Date.now(),
+            name: req.body.name,
+            email: req.body.email,
+            token: 'jwt_token_' + Date.now()
+        }
+    });
+});
+
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
