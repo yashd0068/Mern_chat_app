@@ -7,8 +7,8 @@ console.log('All env vars:', import.meta.env);
 console.log('=== END DEBUG ===');
 
 // Add /api if it's missing
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_URL = `${API_BASE_URL}/api`;
 console.log('Computed API_URL:', API_URL);
 
 console.log('Final API_URL:', API_URL);
