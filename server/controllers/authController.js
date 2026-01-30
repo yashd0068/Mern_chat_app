@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs'); // Add this import
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
@@ -7,7 +8,7 @@ const generateToken = (id) => {
     });
 };
 
-// Register user - SERVER SIDE
+// Register user - MANUAL PASSWORD HASHING
 const register = async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -34,19 +35,22 @@ const register = async (req, res) => {
             });
         }
 
+        console.log('🔐 Hashing password...');
+
+        // Hash password manually (NO pre-save hook)
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
         console.log('📝 Creating user...');
 
-        // Create user - SIMPLE VERSION
-        const user = new User({
+        // Create user with already hashed password
+        const user = await User.create({
             name,
             email: email.toLowerCase(),
-            password
+            password: hashedPassword // Already hashed
         });
 
-        // Save the user
-        await user.save();
-
-        console.log('✅ User saved with ID:', user._id);
+        console.log('✅ User created with ID:', user._id);
 
         // Generate token
         const token = generateToken(user._id);
@@ -65,28 +69,8 @@ const register = async (req, res) => {
             token: token
         });
     } catch (error) {
-        console.error('🔥 Registration error:', error);
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
+        console.error('🔥 Registration error:', error.message);
         console.error('Error stack:', error.stack);
-
-        // Check if it's a validation error
-        if (error.name === 'ValidationError') {
-            const messages = Object.values(error.errors).map(val => val.message);
-            return res.status(400).json({
-                success: false,
-                message: messages.join(', ')
-            });
-        }
-
-        // Check if it's a duplicate key error
-        if (error.code === 11000) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email already exists'
-            });
-        }
-
         res.status(500).json({
             success: false,
             message: 'Registration failed: ' + error.message
@@ -94,7 +78,7 @@ const register = async (req, res) => {
     }
 };
 
-// Login user - UPDATED WITH DEBUG LOGS
+// Login user - MANUAL PASSWORD COMPARISON
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -103,7 +87,6 @@ const login = async (req, res) => {
 
         // Check if email and password are provided
         if (!email || !password) {
-            console.log('❌ Missing email or password');
             return res.status(400).json({
                 success: false,
                 message: 'Please provide email and password'
@@ -111,12 +94,10 @@ const login = async (req, res) => {
         }
 
         // Find user by email
-        console.log('🔍 Searching for user with email:', email);
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.toLowerCase() });
 
         if (!user) {
             console.log('❌ User not found for email:', email);
-            console.log('Available emails in DB:', await User.find({}, 'email'));
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
@@ -124,19 +105,14 @@ const login = async (req, res) => {
         }
 
         console.log('✅ User found:', user.email);
-        console.log('🔐 Stored hashed password:', user.password ? 'Exists' : 'Missing');
-        console.log('🔐 Input password:', password);
 
-        // Check password
+        // Compare password manually
         console.log('🔐 Comparing password...');
-        const isPasswordMatch = await user.comparePassword(password);
+        const isPasswordMatch = await bcrypt.compare(password, user.password);
         console.log('🔐 Password match result:', isPasswordMatch);
 
         if (!isPasswordMatch) {
             console.log('❌ Password mismatch');
-            console.log('User ID:', user._id);
-            console.log('Input:', password);
-            console.log('Stored hash:', user.password.substring(0, 20) + '...');
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
@@ -167,13 +143,13 @@ const login = async (req, res) => {
         });
     } catch (error) {
         console.error('🔥 Login error:', error);
-        console.error('Error stack:', error.stack);
         res.status(500).json({
             success: false,
             message: error.message || 'Login failed'
         });
     }
 };
+
 // Logout user
 const logout = async (req, res) => {
     try {

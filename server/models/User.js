@@ -97,40 +97,50 @@
 
 // models/User.js - CORRECTED VERSION// models/User.js - TEMPORARY SIMPLE VERSION
 // models/User.js - SIMPLIFIED WORKING VERSION
+// models/User.js - SUPER SIMPLE WORKING VERSION
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
-    password: { type: String, required: true },
-    profilePic: { type: String, default: '' },
-    bio: { type: String, default: '' },
-    online: { type: Boolean, default: false },
-    lastSeen: { type: Date, default: Date.now }
-}, { timestamps: true });
-
-// ✅ SIMPLE: Hash password before saving
-userSchema.pre('save', function (next) {
-    const user = this;
-
-    // Only hash if password is modified or new
-    if (!user.isModified('password')) return next();
-
-    try {
-        // Generate salt
-        const salt = bcrypt.genSaltSync(10);
-        // Hash the password
-        user.password = bcrypt.hashSync(user.password, salt);
-        next();
-    } catch (error) {
-        next(error);
+    name: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        lowercase: true
+    },
+    password: {
+        type: String,
+        required: true
+    },
+    profilePic: {
+        type: String,
+        default: ''
+    },
+    bio: {
+        type: String,
+        default: ''
+    },
+    online: {
+        type: Boolean,
+        default: false
+    },
+    lastSeen: {
+        type: Date,
+        default: Date.now
     }
+}, {
+    timestamps: true
 });
 
-// Compare password
-userSchema.methods.comparePassword = function (candidatePassword) {
-    return bcrypt.compareSync(candidatePassword, this.password);
+// ✅ NO PRE-SAVE HOOK AT ALL - Remove it completely!
+
+// Compare password method (temporary - will fix later)
+userSchema.methods.comparePassword = async function (candidatePassword) {
+    // For testing, compare plain text (temporary)
+    return candidatePassword === this.password;
 };
 
 module.exports = mongoose.model('User', userSchema);
