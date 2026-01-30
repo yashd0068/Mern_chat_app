@@ -103,59 +103,7 @@ app.get('/api/debug/users', async (req, res) => {
     }
 });
 
-// Add debug logging before routes
-console.log('🔍 Checking route files...');
 
-try {
-    const authRoutes = require('./routes/authRoutes');
-    console.log('✅ authRoutes loaded');
-} catch (error) {
-    console.error('❌ authRoutes error:', error.message);
-}
-
-try {
-    const userRoutes = require('./routes/userRoutes');
-    console.log('✅ userRoutes loaded');
-} catch (error) {
-    console.error('❌ userRoutes error:', error.message);
-}
-
-try {
-    const chatRoutes = require('./routes/chatRoutes');
-    console.log('✅ chatRoutes loaded');
-} catch (error) {
-    console.error('❌ chatRoutes error:', error.message);
-}
-
-try {
-    const messageRoutes = require('./routes/messageRoutes');
-    console.log('✅ messageRoutes loaded');
-} catch (error) {
-    console.error('❌ messageRoutes error:', error.message);
-}
-
-// Use routes with enhanced logging
-app.use('/api/auth', (req, res, next) => {
-    console.log(`🔗 Auth route accessed: ${req.method} ${req.originalUrl}`);
-    next();
-}, authRoutes);
-
-app.use('/api/users', (req, res, next) => {
-    console.log(`🔗 Users route accessed: ${req.method} ${req.originalUrl}`);
-    next();
-}, userRoutes);
-
-app.use('/api/chats', (req, res, next) => {
-    console.log(`🔗 Chats route accessed: ${req.method} ${req.originalUrl}`);
-    next();
-}, chatRoutes);
-
-app.use('/api/messages', (req, res, next) => {
-    console.log(`🔗 Messages route accessed: ${req.method} ${req.originalUrl}`);
-    next();
-}, messageRoutes);
-
-console.log('✅ All routes mounted');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
