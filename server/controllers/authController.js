@@ -74,10 +74,11 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        console.log('🔑 Login attempt:', { email });
+        console.log('🔑 Login attempt:', { email, password: '***' });
 
         // Check if email and password are provided
         if (!email || !password) {
+            console.log('❌ Missing email or password');
             return res.status(400).json({
                 success: false,
                 message: 'Please provide email and password'
@@ -85,24 +86,32 @@ const login = async (req, res) => {
         }
 
         // Find user by email
+        console.log('🔍 Searching for user with email:', email);
         const user = await User.findOne({ email });
-        console.log('🔍 User found:', user ? `Yes (${user._id})` : 'No');
 
         if (!user) {
             console.log('❌ User not found for email:', email);
+            console.log('Available emails in DB:', await User.find({}, 'email'));
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
             });
         }
 
+        console.log('✅ User found:', user.email);
+        console.log('🔐 Stored hashed password:', user.password ? 'Exists' : 'Missing');
+        console.log('🔐 Input password:', password);
+
         // Check password
         console.log('🔐 Comparing password...');
         const isPasswordMatch = await user.comparePassword(password);
-        console.log('🔐 Password match:', isPasswordMatch);
+        console.log('🔐 Password match result:', isPasswordMatch);
 
         if (!isPasswordMatch) {
-            console.log('❌ Password mismatch for user:', user.email);
+            console.log('❌ Password mismatch');
+            console.log('User ID:', user._id);
+            console.log('Input:', password);
+            console.log('Stored hash:', user.password.substring(0, 20) + '...');
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
@@ -126,8 +135,6 @@ const login = async (req, res) => {
                 email: user.email,
                 profilePic: user.profilePic,
                 bio: user.bio,
-                followers: user.followers,
-                following: user.following,
                 online: user.online,
                 lastSeen: user.lastSeen
             },
@@ -135,13 +142,13 @@ const login = async (req, res) => {
         });
     } catch (error) {
         console.error('🔥 Login error:', error);
+        console.error('Error stack:', error.stack);
         res.status(500).json({
             success: false,
             message: error.message || 'Login failed'
         });
     }
 };
-
 // Logout user
 const logout = async (req, res) => {
     try {
