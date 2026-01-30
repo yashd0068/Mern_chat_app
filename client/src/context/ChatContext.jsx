@@ -291,9 +291,10 @@ export const ChatProvider = ({ children }) => {
                 throw new Error(data.message || 'Failed to send message');
             }
 
-            // Don't update messages here - socket will handle real-time update
-            // Just update chat list order
+            // ✅ REMOVE THIS: Don't update messages here
+            // setMessages(prev => [...prev, data.message]);
 
+            // ✅ ONLY update chat list order (keep this)
             setChats(prev => {
                 const updatedChats = prev.map(chat =>
                     chat._id === chatId
@@ -311,6 +312,7 @@ export const ChatProvider = ({ children }) => {
                 return updatedChats;
             });
 
+            // ✅ Return the message (socket will handle UI update)
             return data.message;
 
         } catch (error) {
