@@ -1,16 +1,32 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-console.log('=== VITE ENV DEBUG ===');
-console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
-console.log('All env vars:', import.meta.env);
-console.log('=== END DEBUG ===');
+console.log('=== AUTH CONTEXT LOADED ===');
+console.log('VITE_API_URL from env:', import.meta.env.VITE_API_URL);
 
-// Add /api if it's missing
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-console.log('Computed API_URL:', API_URL);
+// FIX: Ensure /api is included
+const envApiUrl = import.meta.env.VITE_API_URL;
+let API_URL;
+
+if (envApiUrl && envApiUrl.includes('render.com')) {
+    // If it's the production URL but missing /api
+    if (!envApiUrl.endsWith('/api')) {
+        API_URL = envApiUrl.endsWith('/')
+            ? `${envApiUrl}api`
+            : `${envApiUrl}/api`;
+    } else {
+        API_URL = envApiUrl;
+    }
+} else {
+    // Default/local
+    API_URL = 'https://mern-chat-app-273c.onrender.com/api';
+}
 
 console.log('Final API_URL:', API_URL);
+console.log('Login URL will be:', `${API_URL}/auth/login`);
+console.log('================');
+
+const AuthContext = createContext();
 
 
 const AuthContext = createContext();
