@@ -138,11 +138,7 @@ export const SocketProvider = ({ children }) => {
     return (
         <SocketContext.Provider value={value}>
 
-            // AuthContext.jsx - Add this inside AuthProvider component:
-            console.log('🔧 Auth Context Config:');
-            console.log('API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
-            console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
-            console.log('Final API_URL:', API_URL);
+
             {children}
             {/* Optional: Connection status indicator */}
             {process.env.NODE_ENV === 'development' && (
