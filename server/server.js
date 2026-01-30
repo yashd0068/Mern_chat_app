@@ -164,3 +164,15 @@ const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+        console.log("✅ MongoDB connected");
+
+        // Test User model after connection
+        const User = require('./models/User');
+        console.log("✅ User model loaded");
+    })
+    .catch((err) => console.error("❌ MongoDB error:", err));
