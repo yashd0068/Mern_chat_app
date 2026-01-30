@@ -1,7 +1,15 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
+console.log('=== VITE ENV DEBUG ===');
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('All env vars:', import.meta.env);
+console.log('=== END DEBUG ===');
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+console.log('Final API_URL:', API_URL);
+
 
 const AuthContext = createContext();
 
