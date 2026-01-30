@@ -100,9 +100,13 @@ app.post('/api/auth/register', (req, res) => {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Add this before your routes
+// Update your debug endpoint in server.js:
 app.get('/api/debug/users', async (req, res) => {
     try {
+        // Dynamically import User model
+        const User = require('./models/User');
         const users = await User.find({}).select('-password');
+
         res.json({
             count: users.length,
             users: users.map(u => ({
@@ -110,13 +114,17 @@ app.get('/api/debug/users', async (req, res) => {
                 name: u.name,
                 email: u.email,
                 createdAt: u.createdAt,
-                updatedAt: u.updatedAt
+                updatedAt: u.updatedAt,
+                online: u.online,
+                lastSeen: u.lastSeen
             }))
         });
     } catch (error) {
+        console.error('Debug users error:', error);
         res.json({
+            success: false,
             error: error.message,
-            message: 'Make sure User model is imported correctly'
+            stack: error.stack
         });
     }
 });
@@ -126,6 +134,9 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+
+// Import User model for debug route
+
 
 // Use routes
 app.use('/api/auth', authRoutes);
