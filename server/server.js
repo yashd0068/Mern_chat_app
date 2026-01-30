@@ -13,8 +13,6 @@ const server = http.createServer(app);
 
 // 🔹 Import socket initializer
 const { initSocket } = require('./socket');
-
-// 🔹 Initialize socket.io
 initSocket(server);
 
 // Create uploads directories if they don't exist
@@ -24,18 +22,16 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 const allowedOrigins = [
-    "https://mern-chat-app-ashen.vercel.app",  // Your Vercel domain
-    "http://localhost:5173",                    // Local dev
-    process.env.CLIENT_URL                      // Optional: from env variable
+    "https://mern-chat-app-ashen.vercel.app",
+    "http://localhost:5173",
+    process.env.CLIENT_URL
 ];
 
 // Middleware
 app.use(
     cors({
         origin: function (origin, callback) {
-            // Allow requests with no origin (like mobile apps or curl requests)
             if (!origin) return callback(null, true);
-
             if (allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
@@ -51,12 +47,11 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Add this after CORS middleware
+// Request logging middleware
 app.use((req, res, next) => {
     console.log(`📨 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
     console.log('Origin:', req.headers.origin);
-    console.log('Headers:', req.headers);
-    if (req.body) {
+    if (req.body && Object.keys(req.body).length > 0) {
         console.log('Body:', req.body);
     }
     next();
@@ -66,47 +61,33 @@ app.use((req, res, next) => {
 app.get('/', (req, res) => {
     res.json({
         status: 'OK',
-        message: 'Server is running!',
+        message: 'Chat App Backend is running!',
+        timestamp: new Date().toISOString(),
         endpoints: {
             register: 'POST /api/auth/register',
-            test: 'GET /api/test'
+            login: 'POST /api/auth/login',
+            debug: 'GET /api/debug/users'
         }
     });
 });
 
 // Test endpoint
 app.get('/api/test', (req, res) => {
-    res.json({ message: 'API test endpoint is working!' });
-});
-
-// Temporary simple register endpoint
-app.post('/api/auth/register', (req, res) => {
-    console.log('📝 Register endpoint called with:', req.body);
-
-    // Simple response
     res.json({
         success: true,
-        message: 'Registration successful!',
-        user: {
-            _id: 'user_' + Date.now(),
-            name: req.body.name,
-            email: req.body.email,
-            token: 'jwt_token_' + Date.now()
-        }
+        message: 'API is working!',
+        serverTime: new Date().toISOString()
     });
 });
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Add this before your routes
-// Update your debug endpoint in server.js:
+// Debug endpoint to check users
 app.get('/api/debug/users', async (req, res) => {
     try {
-        // Dynamically import User model
         const User = require('./models/User');
         const users = await User.find({}).select('-password');
-
         res.json({
             count: users.length,
             users: users.map(u => ({
@@ -121,10 +102,9 @@ app.get('/api/debug/users', async (req, res) => {
         });
     } catch (error) {
         console.error('Debug users error:', error);
-        res.json({
+        res.status(500).json({
             success: false,
-            error: error.message,
-            stack: error.stack
+            error: error.message
         });
     }
 });
@@ -135,18 +115,23 @@ const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 
-// Import User model for debug route
-
-
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);
 
-// Global error handler (KEEP AT END)
+// Catch-all for 404
+app.use('*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: `Route ${req.originalUrl} not found`
+    });
+});
+
+// Global error handler
 app.use((err, req, res, next) => {
-    console.error('Server error:', err.message);
+    console.error('🔥 Server error:', err.message);
     res.status(500).json({
         success: false,
         message: 'Internal server error'
@@ -154,25 +139,19 @@ app.use((err, req, res, next) => {
 });
 
 // MongoDB connection
-mongoose
-    .connect(process.env.MONGODB_URI)
-    .then(() => console.log("MongoDB connected"))
-    .catch((err) => console.error("MongoDB error:", err));
-
-// 🔹 Start server
-const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-
-
-// MongoDB connection
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
         console.log("✅ MongoDB connected");
-
-        // Test User model after connection
-        const User = require('./models/User');
-        console.log("✅ User model loaded");
+        console.log("✅ Database:", mongoose.connection.name);
     })
-    .catch((err) => console.error("❌ MongoDB error:", err));
+    .catch((err) => {
+        console.error("❌ MongoDB error:", err);
+        process.exit(1); // Exit if DB connection fails
+    });
+
+// Start server
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌐 URL: https://mern-chat-app-273c.onrender.com`);
+});

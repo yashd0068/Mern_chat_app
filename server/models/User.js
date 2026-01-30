@@ -95,33 +95,27 @@
 // module.exports = mongoose.model('User', userSchema);
 
 
-// models/User.js - CORRECTED VERSION
+// models/User.js - CORRECTED VERSION// models/User.js - TEMPORARY SIMPLE VERSION
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Please add a name'],
-        trim: true,
-        minlength: [2, 'Name must be at least 2 characters'],
-        maxlength: [50, 'Name cannot exceed 50 characters']
+        required: true,
+        trim: true
     },
     email: {
         type: String,
-        required: [true, 'Please add an email'],
+        required: true,
         unique: true,
         lowercase: true,
-        trim: true,
-        match: [
-            /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-            'Please add a valid email'
-        ]
+        trim: true
     },
     password: {
         type: String,
-        required: [true, 'Please add a password'],
-        minlength: [6, 'Password must be at least 6 characters']
+        required: true,
+        minlength: 6
     },
     profilePic: {
         type: String,
@@ -129,8 +123,7 @@ const userSchema = new mongoose.Schema({
     },
     bio: {
         type: String,
-        default: '',
-        maxlength: [200, 'Bio cannot exceed 200 characters']
+        default: ''
     },
     online: {
         type: Boolean,
@@ -139,20 +132,12 @@ const userSchema = new mongoose.Schema({
     lastSeen: {
         type: Date,
         default: Date.now
-    },
-    followers: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }],
-    following: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }]
+    }
 }, {
     timestamps: true
 });
 
-// ✅ CORRECTED: Pre-save hook with next parameter
+// ✅ CORRECT: Password hashing with next parameter
 userSchema.pre('save', async function (next) {
     // Only hash the password if it has been modified (or is new)
     if (!this.isModified('password')) {

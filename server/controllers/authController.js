@@ -16,31 +16,43 @@ const register = async (req, res) => {
 
         // Check if all fields are provided
         if (!name || !email || !password) {
+            console.log('❌ Missing fields');
             return res.status(400).json({
                 success: false,
                 message: 'Please provide all fields'
             });
         }
 
-        // Check if user exists
-        const userExists = await User.findOne({ email });
+        // Check if user exists - CASE INSENSITIVE
+        const userExists = await User.findOne({
+            email: { $regex: new RegExp(`^${email}$`, 'i') }
+        });
+
         if (userExists) {
-            console.log('❌ User already exists:', email);
+            console.log('❌ User already exists:', userExists.email);
             return res.status(400).json({
                 success: false,
                 message: 'User already exists'
             });
         }
 
-        // Create user
-        console.log('📝 Creating user...');
+        console.log('📝 Creating user document...');
+
+        // Create user - METHOD 1: Using User.create()
         const user = await User.create({
             name,
-            email,
+            email: email.toLowerCase(), // Store lowercase
             password
         });
 
-        console.log('✅ User created:', user._id);
+        console.log('✅ User created with ID:', user._id);
+        console.log('✅ User email:', user.email);
+        console.log('✅ Hashed password exists:', !!user.password);
+        console.log('✅ Password length:', user.password?.length);
+
+        // Verify user was saved
+        const savedUser = await User.findById(user._id);
+        console.log('✅ User verified in DB:', !!savedUser);
 
         // Generate token
         const token = generateToken(user._id);
@@ -53,22 +65,20 @@ const register = async (req, res) => {
                 email: user.email,
                 profilePic: user.profilePic,
                 bio: user.bio,
-                followers: user.followers,
-                following: user.following,
                 online: user.online,
                 lastSeen: user.lastSeen
             },
             token: token
         });
     } catch (error) {
-        console.error('🔥 Registration error:', error);
+        console.error('🔥 Registration error:', error.message);
+        console.error('Error stack:', error.stack);
         res.status(500).json({
             success: false,
             message: error.message || 'Registration failed'
         });
     }
 };
-
 // Login user - UPDATED WITH DEBUG LOGS
 const login = async (req, res) => {
     try {
