@@ -352,6 +352,34 @@ const ChatWindow = ({ chat, onBack }) => {
         return message._id || message.tempId;
     };
 
+    // ADD THIS DEBUG CODE
+    useEffect(() => {
+        console.log('=== MESSAGE DEBUG ===');
+        console.log('Current user ID:', user?._id);
+        console.log('Current user name:', user?.name);
+
+        messages.forEach((msg, index) => {
+            console.log(`Message ${index}:`, {
+                content: msg.content,
+                senderObject: msg.sender,
+                senderId: msg.sender?._id,
+                senderName: msg.sender?.name,
+                isOwn: msg.sender?._id === user?._id,
+                senderType: typeof msg.sender
+            });
+        });
+    }, [messages, user]);
+
+    // Also check chat participants
+    useEffect(() => {
+        if (chat) {
+            console.log('=== CHAT DEBUG ===');
+            console.log('Chat ID:', chat._id);
+            console.log('All participants:', chat.participants);
+            console.log('Other user:', chat.participants?.find(p => p._id !== user?._id));
+        }
+    }, [chat, user]);
+
     if (!chat) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center bg-white dark:bg-gray-900">
